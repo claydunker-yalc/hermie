@@ -26,7 +26,7 @@ const anthropic = new Anthropic({
 });
 
 // Write operations that trigger a context re-pull
-const WRITE_OPERATIONS = ['capture_thought', 'add_task', 'complete_task'];
+const WRITE_OPERATIONS = ['capture_thought', 'add_action_item', 'complete_action_item', 'update_action_item'];
 
 /**
  * Execute a Clay-Mate tool call
@@ -35,15 +35,15 @@ async function executeToolCall(toolName, toolInput) {
   console.log(`Executing tool: ${toolName}`, toolInput);
 
   switch (toolName) {
-    // Task tools
-    case 'list_tasks':
-      return clayMate.listTasks(toolInput);
-    case 'add_task':
-      return clayMate.addTask(toolInput);
-    case 'complete_task':
-      return clayMate.completeTask(toolInput.task_id);
-    case 'search_tasks':
-      return clayMate.searchTasks(toolInput.query, toolInput.status || 'all');
+    // Action Item tools
+    case 'list_action_items':
+      return clayMate.listActionItems(toolInput);
+    case 'add_action_item':
+      return clayMate.addActionItem(toolInput);
+    case 'complete_action_item':
+      return clayMate.completeActionItem(toolInput.action_item_id);
+    case 'update_action_item':
+      return clayMate.updateActionItem(toolInput.action_item_id, toolInput);
     // Thought tools
     case 'search_thoughts':
       return clayMate.searchThoughts(

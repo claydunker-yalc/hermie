@@ -91,24 +91,24 @@ async function captureThought(content) {
   return mcpCall('capture_thought', { content });
 }
 
-// ============ TASK TOOLS ============
+// ============ ACTION ITEM TOOLS ============
 
-async function listTasks(options = {}) {
+async function listActionItems(options = {}) {
   // options: { status, domain, limit, include_overdue }
-  return mcpCall('list_tasks', options);
+  return mcpCall('list_action_items', options);
 }
 
-async function addTask(params) {
-  // params: { title, description, domain, due_date, priority }
-  return mcpCall('add_task', params);
+async function addActionItem(params) {
+  // params: { title, domain, due_date, linked_project_id, linked_person_id, source }
+  return mcpCall('add_action_item', params);
 }
 
-async function completeTask(taskId) {
-  return mcpCall('complete_task', { task_id: taskId });
+async function completeActionItem(actionItemId) {
+  return mcpCall('complete_action_item', { action_item_id: actionItemId });
 }
 
-async function searchTasks(query, status = 'all') {
-  return mcpCall('search_tasks', { query, status });
+async function updateActionItem(actionItemId, updates) {
+  return mcpCall('update_action_item', { action_item_id: actionItemId, ...updates });
 }
 
 // ============ BOOT CONTEXT ============
@@ -119,15 +119,15 @@ async function searchTasks(query, status = 'all') {
  */
 async function loadBootContext() {
   const results = await Promise.all([
-    listTasks({ status: 'open', limit: 20, include_overdue: true }),
+    listActionItems({ status: 'open', limit: 20, include_overdue: true }),
     listThoughts({ limit: 10, days: 7 }),
     thoughtStats()
   ]);
 
-  const [openTasks, recentThoughts, stats] = results;
+  const [openActionItems, recentThoughts, stats] = results;
 
   return {
-    openTasks: openTasks.data,
+    openActionItems: openActionItems.data,
     recentThoughts: recentThoughts.data,
     stats: stats.data,
     errors: results.filter(r => r.error).map(r => r.error)
@@ -140,11 +140,11 @@ module.exports = {
   listThoughts,
   thoughtStats,
   captureThought,
-  // Tasks
-  listTasks,
-  addTask,
-  completeTask,
-  searchTasks,
+  // Action Items
+  listActionItems,
+  addActionItem,
+  completeActionItem,
+  updateActionItem,
   // Boot
   loadBootContext,
   mcpCall

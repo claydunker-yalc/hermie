@@ -46,8 +46,8 @@ function needsBootContext(session) {
 function formatClayMateContext(bootData) {
   const sections = [];
 
-  if (bootData.openTasks) {
-    sections.push(`## Open Tasks\n${bootData.openTasks}`);
+  if (bootData.openActionItems) {
+    sections.push(`## Open Action Items\n${bootData.openActionItems}`);
   }
 
   if (bootData.recentThoughts) {

@@ -28,11 +28,11 @@ You're the kind of friend who remembers the details, follows up on things, and a
 
 You have access to Clay-Mate tools:
 
-**Task Management:**
-- list_tasks — See open tasks (loaded automatically at session start)
-- add_task — Create a new task
-- complete_task — Mark a task as done (requires task ID)
-- search_tasks — Find tasks by keyword
+**Action Items (Tasks):**
+- list_action_items — See open action items (loaded automatically at session start)
+- add_action_item — Create a new action item
+- complete_action_item — Mark an action item as done (requires action_item_id)
+- update_action_item — Update an action item's fields
 
 **Thought Capture:**
 - search_thoughts — Semantic search across all captured thoughts
@@ -42,11 +42,11 @@ You have access to Clay-Mate tools:
 
 ## CRITICAL: ALWAYS USE THE ACTUAL TOOLS
 
-**NEVER claim to have done something without actually calling a tool.** If you say you completed a task, you MUST have called complete_task. If you say you added a task, you MUST have called add_task.
+**NEVER claim to have done something without actually calling a tool.** If you say you completed an action item, you MUST have called complete_action_item. If you say you added one, you MUST have called add_action_item.
 
-When completing tasks:
-1. First use list_tasks or search_tasks to find the task ID
-2. Then call complete_task with that ID
+When completing action items:
+1. First use list_action_items to find the action_item_id
+2. Then call complete_action_item with that ID
 3. Only confirm completion AFTER the tool returns success
 
 If a tool fails, tell Clay honestly. Don't pretend it worked.
@@ -57,7 +57,7 @@ If a tool fails, tell Clay honestly. Don't pretend it worked.
 - Use Slack mrkdwn formatting where it helps (bold, bullets, etc.) but don't over-format
 - When you complete or add a task, confirm what the tool returned
 - When you're not sure about something, ask rather than guess
-- Reference the task list from context naturally — you don't need to re-fetch it every time
+- Reference the action items from context naturally — you don't need to re-fetch every time
 
 ## USING CLAY-MATE CONTEXT
 
@@ -75,10 +75,10 @@ function buildSystemPrompt(clayMateContext) {
  */
 function getToolDefinitions() {
   return [
-    // Task tools
+    // Action Item tools
     {
-      name: 'list_tasks',
-      description: 'List tasks from Clay-Mate with optional filters. Usually already loaded in context, but use this to refresh or filter differently.',
+      name: 'list_action_items',
+      description: 'List action items from Clay-Mate with optional filters. Usually already loaded in context, but use this to refresh or filter differently.',
       input_schema: {
         type: 'object',
         properties: {
@@ -94,23 +94,23 @@ function getToolDefinitions() {
           limit: {
             type: 'number',
             description: 'Max results (default: 20)'
+          },
+          include_overdue: {
+            type: 'boolean',
+            description: 'Include overdue items flag (default: true)'
           }
         }
       }
     },
     {
-      name: 'add_task',
-      description: 'Create a new task in Clay-Mate.',
+      name: 'add_action_item',
+      description: 'Create a new action item in Clay-Mate.',
       input_schema: {
         type: 'object',
         properties: {
           title: {
             type: 'string',
-            description: 'Short title for the task'
-          },
-          description: {
-            type: 'string',
-            description: 'Longer description or notes (optional)'
+            description: 'Short title for the action item'
           },
           domain: {
             type: 'string',
@@ -120,46 +120,65 @@ function getToolDefinitions() {
             type: 'string',
             description: 'Due date in YYYY-MM-DD format'
           },
-          priority: {
+          linked_project_id: {
             type: 'string',
-            enum: ['low', 'medium', 'high'],
-            description: 'Priority level (default: medium)'
+            description: 'Optional project UUID to link to'
+          },
+          linked_person_id: {
+            type: 'string',
+            description: 'Optional person UUID to link to'
+          },
+          source: {
+            type: 'string',
+            description: 'Where this came from (e.g., hermie, manual)'
           }
         },
         required: ['title']
       }
     },
     {
-      name: 'complete_task',
-      description: 'Mark a task as completed. Requires the task ID (can use partial ID like first 8 characters).',
+      name: 'complete_action_item',
+      description: 'Mark an action item as completed. Requires the action_item_id (can use partial ID like first 8 characters).',
       input_schema: {
         type: 'object',
         properties: {
-          task_id: {
+          action_item_id: {
             type: 'string',
-            description: 'The task ID (full UUID or partial like first 8 chars)'
+            description: 'The action item ID (full UUID or partial like first 8 chars)'
           }
         },
-        required: ['task_id']
+        required: ['action_item_id']
       }
     },
     {
-      name: 'search_tasks',
-      description: 'Search tasks by keyword in title or description.',
+      name: 'update_action_item',
+      description: 'Update fields on an existing action item.',
       input_schema: {
         type: 'object',
         properties: {
-          query: {
+          action_item_id: {
             type: 'string',
-            description: 'Search term'
+            description: 'The action item ID (full UUID or partial like first 8 chars)'
+          },
+          title: {
+            type: 'string',
+            description: 'New title'
+          },
+          domain: {
+            type: 'string',
+            description: 'New domain'
+          },
+          due_date: {
+            type: 'string',
+            description: 'New due date (YYYY-MM-DD)'
           },
           status: {
             type: 'string',
-            enum: ['open', 'completed', 'all'],
-            description: 'Filter by status (default: all)'
+            enum: ['open', 'completed'],
+            description: 'New status'
           }
         },
-        required: ['query']
+        required: ['action_item_id']
       }
     },
     // Thought tools
