@@ -5,6 +5,7 @@
 
 require('dotenv').config();
 
+const http = require('http');
 const { App } = require('@slack/bolt');
 const Anthropic = require('@anthropic-ai/sdk');
 
@@ -255,21 +256,33 @@ app.event('app_mention', async ({ event, client, context }) => {
   }
 });
 
-// Health check endpoint for Railway/uptime monitoring
-app.receiver.app.get('/health', async (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'hermie'
-  });
+// Simple health check server for Railway/uptime monitoring
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/health' || req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      service: 'hermie'
+    }));
+  } else {
+    res.writeHead(404);
+    res.end();
+  }
 });
 
 // Start the app
 (async () => {
   const port = process.env.PORT || 3000;
 
-  await app.start(port);
-  console.log(`Hermie is running on port ${port}`);
+  // Start health check server
+  healthServer.listen(port, () => {
+    console.log(`Health check server running on port ${port}`);
+  });
+
+  // Start Slack app (Socket Mode doesn't need a port)
+  await app.start();
+  console.log('Hermie is running');
   console.log('Socket Mode: connected');
   console.log('Ready to chat!');
 })();
