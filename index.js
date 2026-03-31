@@ -177,21 +177,7 @@ app.event('message', async ({ event, client, context }) => {
   console.log(`DM from ${userId}: ${messageText}`);
 
   try {
-    // Show typing indicator
-    await client.reactions.add({
-      channel: event.channel,
-      timestamp: event.ts,
-      name: 'brain'
-    });
-
     const response = await processWithClaude(userId, messageText);
-
-    // Remove typing indicator
-    await client.reactions.remove({
-      channel: event.channel,
-      timestamp: event.ts,
-      name: 'brain'
-    }).catch(() => {}); // Ignore if already removed
 
     await client.chat.postMessage({
       channel: event.channel,
@@ -224,21 +210,7 @@ app.event('app_mention', async ({ event, client, context }) => {
   console.log(`Mention from ${userId} in ${event.channel}: ${messageText}`);
 
   try {
-    // Show typing indicator
-    await client.reactions.add({
-      channel: event.channel,
-      timestamp: event.ts,
-      name: 'brain'
-    });
-
     const response = await processWithClaude(userId, messageText);
-
-    // Remove typing indicator
-    await client.reactions.remove({
-      channel: event.channel,
-      timestamp: event.ts,
-      name: 'brain'
-    }).catch(() => {});
 
     await client.chat.postMessage({
       channel: event.channel,
