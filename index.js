@@ -1,6 +1,6 @@
 /**
  * Hermie - Clay's Personal Life-Ops Slack Bot
- * Powered by Claude and Clay-Mate
+ * Powered by Claude and Clay-Mate (Open Brain)
  */
 
 require('dotenv').config();
@@ -26,13 +26,7 @@ const anthropic = new Anthropic({
 });
 
 // Write operations that trigger a context re-pull
-const WRITE_OPERATIONS = [
-  'add_action_item',
-  'complete_action_item',
-  'update_action_item',
-  'add_thought',
-  'add_agent_state'
-];
+const WRITE_OPERATIONS = ['capture_thought'];
 
 /**
  * Execute a Clay-Mate tool call
@@ -41,24 +35,18 @@ async function executeToolCall(toolName, toolInput) {
   console.log(`Executing tool: ${toolName}`, toolInput);
 
   switch (toolName) {
-    case 'global_search':
-      return clayMate.globalSearch(toolInput.query);
-    case 'add_action_item':
-      return clayMate.addActionItem(toolInput);
-    case 'complete_action_item':
-      return clayMate.completeActionItem(toolInput.id);
-    case 'update_action_item':
-      return clayMate.updateActionItem(toolInput.id, toolInput);
-    case 'add_thought':
-      return clayMate.addThought(toolInput);
-    case 'add_agent_state':
-      return clayMate.addAgentState(toolInput);
-    case 'list_action_items':
-      return clayMate.listActionItems(toolInput);
+    case 'search_thoughts':
+      return clayMate.searchThoughts(
+        toolInput.query,
+        toolInput.limit || 10,
+        toolInput.threshold || 0.5
+      );
     case 'list_thoughts':
       return clayMate.listThoughts(toolInput);
-    case 'list_people':
-      return clayMate.listPeople(toolInput);
+    case 'thought_stats':
+      return clayMate.thoughtStats();
+    case 'capture_thought':
+      return clayMate.captureThought(toolInput.content);
     default:
       return { error: `Unknown tool: ${toolName}`, data: null };
   }
@@ -110,7 +98,7 @@ async function processWithClaude(userId, userMessage) {
         toolResults.push({
           type: 'tool_result',
           tool_use_id: toolUse.id,
-          content: JSON.stringify(result.data || { error: result.error })
+          content: result.data || result.error || 'No result'
         });
       }
 

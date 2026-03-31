@@ -46,31 +46,12 @@ function needsBootContext(session) {
 function formatClayMateContext(bootData) {
   const sections = [];
 
-  if (bootData.briefing) {
-    sections.push(`## Today's Briefing\n${JSON.stringify(bootData.briefing, null, 2)}`);
+  if (bootData.recentThoughts) {
+    sections.push(`## Recent Thoughts (Last 7 Days)\n${bootData.recentThoughts}`);
   }
 
-  if (bootData.tasks && Array.isArray(bootData.tasks) && bootData.tasks.length > 0) {
-    const taskList = bootData.tasks.map(t => {
-      const due = t.due_date ? ` (due: ${t.due_date})` : '';
-      const domain = t.domain ? ` [${t.domain}]` : '';
-      return `- ${t.title}${domain}${due} (id: ${t.id})`;
-    }).join('\n');
-    sections.push(`## Open Tasks\n${taskList}`);
-  }
-
-  if (bootData.projects && Array.isArray(bootData.projects) && bootData.projects.length > 0) {
-    const projectList = bootData.projects.map(p => {
-      return `- ${p.name}: ${p.description || 'No description'} (id: ${p.id})`;
-    }).join('\n');
-    sections.push(`## Active Projects\n${projectList}`);
-  }
-
-  if (bootData.agentState && Array.isArray(bootData.agentState) && bootData.agentState.length > 0) {
-    const stateList = bootData.agentState.map(s => {
-      return `- ${s.key}: ${s.value}`;
-    }).join('\n');
-    sections.push(`## Agent State / Reminders\n${stateList}`);
+  if (bootData.stats) {
+    sections.push(`## Brain Stats\n${bootData.stats}`);
   }
 
   if (bootData.errors && bootData.errors.length > 0) {

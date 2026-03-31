@@ -3,7 +3,7 @@
  * Constructs the system prompt with Clay-Mate context injected dynamically
  */
 
-const BASE_PROMPT = `You are Hermie, Clay's personal life-ops agent. You live in Slack and have access to Clay-Mate, a comprehensive memory system that tracks his tasks, projects, thoughts, contacts, and life context.
+const BASE_PROMPT = `You are Hermie, Clay's personal life-ops agent. You live in Slack and have access to Clay-Mate (his Open Brain), a personal knowledge system that stores his captured thoughts, notes, and ideas with semantic search.
 
 ## YOUR PERSONALITY
 
@@ -26,38 +26,33 @@ You're the kind of friend who remembers the details, follows up on things, and a
 
 ## WHAT YOU CAN DO
 
-You have access to Clay-Mate tools. Use them when helpful:
+You have access to Clay-Mate (Open Brain) tools:
 
 **Read operations (use freely):**
-- Search across all of Clay-Mate with global_search
-- List thoughts, action items, projects, people, agent state
-- Get daily briefing
+- search_thoughts — Semantic search across all captured thoughts
+- list_thoughts — Browse recent thoughts with optional filters
+- thought_stats — Get summary stats (totals, topics, people mentioned)
 
 **Write operations (do when asked):**
-- Add action items (tasks)
-- Complete action items
-- Update action items
-- Add thoughts
-- Add agent state (reminders, context notes)
+- capture_thought — Save a new thought to Clay's brain
 
 **What you should NOT do without explicit confirmation:**
-- Delete anything
-- Bulk-modify multiple records at once
+- Capture thoughts without Clay asking (unless he clearly wants something saved)
 
 ## HOW TO RESPOND
 
 - Keep responses concise but complete
 - Use Slack mrkdwn formatting where it helps (bold, bullets, etc.) but don't over-format
-- When you take an action (add a task, complete something), confirm what you did
+- When you capture a thought, confirm what you saved
 - When you're not sure about something, ask rather than guess
 - If Clay seems stressed or overloaded, acknowledge it — you know his context
 - If a request is unclear, ask one clarifying question rather than making assumptions
 
 ## USING CLAY-MATE CONTEXT
 
-Below this prompt you'll see current Clay-Mate context including today's briefing, open tasks, active projects, and any pending reminders. Reference this naturally when relevant, but don't dump it back at Clay — he knows his own life. Use it to be helpful, proactive, and context-aware.
+Below this prompt you'll see current Clay-Mate context including recent thoughts and stats. Reference this naturally when relevant, but don't dump it back at Clay — he knows his own life. Use it to be helpful, proactive, and context-aware.
 
-When Clay asks about something specific that might require a search (past thoughts, specific tasks, people, etc.), use the global_search tool to find it rather than guessing.`;
+When Clay asks about something specific, use the search_thoughts tool to find it rather than guessing.`;
 
 /**
  * Build the complete system prompt with Clay-Mate context
@@ -72,197 +67,76 @@ function buildSystemPrompt(clayMateContext) {
 function getToolDefinitions() {
   return [
     {
-      name: 'global_search',
-      description: 'Search across all of Clay-Mate (tasks, projects, thoughts, people, etc.) for specific information. Use when Clay asks about something that might be in his history.',
+      name: 'search_thoughts',
+      description: 'Search Clay-Mate (Open Brain) by meaning. Use when Clay asks about a topic, person, idea, or anything he might have previously captured.',
       input_schema: {
         type: 'object',
         properties: {
           query: {
             type: 'string',
-            description: 'The search query'
+            description: 'What to search for'
+          },
+          limit: {
+            type: 'number',
+            description: 'Max results to return (default 10)'
+          },
+          threshold: {
+            type: 'number',
+            description: 'Similarity threshold 0-1 (default 0.5, lower = broader matches)'
           }
         },
         required: ['query']
       }
     },
     {
-      name: 'add_action_item',
-      description: 'Create a new task/action item in Clay-Mate',
+      name: 'list_thoughts',
+      description: 'List recent thoughts from Clay-Mate with optional filters. Use to browse recent captures or filter by type/topic/person.',
       input_schema: {
         type: 'object',
         properties: {
-          title: {
-            type: 'string',
-            description: 'Title of the task'
+          limit: {
+            type: 'number',
+            description: 'Max results to return (default 10)'
           },
-          description: {
+          type: {
             type: 'string',
-            description: 'Optional longer description'
+            description: 'Filter by type: observation, task, idea, reference, person_note'
           },
-          domain: {
+          topic: {
             type: 'string',
-            description: 'Category/domain (e.g., "school", "credit_union", "dunker_spot", "family", "personal")'
+            description: 'Filter by topic tag'
           },
-          due_date: {
+          person: {
             type: 'string',
-            description: 'Due date in YYYY-MM-DD format'
+            description: 'Filter by person mentioned'
           },
-          priority: {
-            type: 'string',
-            enum: ['low', 'medium', 'high'],
-            description: 'Priority level'
+          days: {
+            type: 'number',
+            description: 'Only thoughts from the last N days'
           }
-        },
-        required: ['title']
+        }
       }
     },
     {
-      name: 'complete_action_item',
-      description: 'Mark a task as completed',
+      name: 'thought_stats',
+      description: 'Get summary statistics from Clay-Mate: total thoughts, types breakdown, top topics, and people mentioned.',
       input_schema: {
         type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'The ID of the action item to complete'
-          }
-        },
-        required: ['id']
+        properties: {}
       }
     },
     {
-      name: 'update_action_item',
-      description: 'Update an existing task',
-      input_schema: {
-        type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description: 'The ID of the action item to update'
-          },
-          title: {
-            type: 'string',
-            description: 'New title'
-          },
-          description: {
-            type: 'string',
-            description: 'New description'
-          },
-          domain: {
-            type: 'string',
-            description: 'New domain/category'
-          },
-          due_date: {
-            type: 'string',
-            description: 'New due date in YYYY-MM-DD format'
-          },
-          priority: {
-            type: 'string',
-            enum: ['low', 'medium', 'high'],
-            description: 'New priority level'
-          },
-          status: {
-            type: 'string',
-            description: 'New status'
-          }
-        },
-        required: ['id']
-      }
-    },
-    {
-      name: 'add_thought',
-      description: 'Save a new thought or note to Clay-Mate',
+      name: 'capture_thought',
+      description: 'Save a new thought to Clay-Mate. Use when Clay wants to remember something. Write it as a clear, standalone statement.',
       input_schema: {
         type: 'object',
         properties: {
           content: {
             type: 'string',
-            description: 'The thought content'
-          },
-          tags: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Optional tags for categorization'
+            description: 'The thought to capture — should make sense when retrieved later'
           }
         },
         required: ['content']
-      }
-    },
-    {
-      name: 'add_agent_state',
-      description: 'Store a reminder or context note that Hermie should remember',
-      input_schema: {
-        type: 'object',
-        properties: {
-          key: {
-            type: 'string',
-            description: 'A short key/label for this state'
-          },
-          value: {
-            type: 'string',
-            description: 'The value/content to remember'
-          },
-          context: {
-            type: 'string',
-            description: 'Additional context about why this is being stored'
-          },
-          expires_at: {
-            type: 'string',
-            description: 'Optional expiration date in ISO format'
-          }
-        },
-        required: ['key', 'value']
-      }
-    },
-    {
-      name: 'list_action_items',
-      description: 'Get a list of tasks/action items. Use to see more tasks than what was loaded at session start.',
-      input_schema: {
-        type: 'object',
-        properties: {
-          status: {
-            type: 'string',
-            description: 'Filter by status (open, completed, all)'
-          },
-          domain: {
-            type: 'string',
-            description: 'Filter by domain/category'
-          },
-          overdue: {
-            type: 'boolean',
-            description: 'Only show overdue items'
-          },
-          limit: {
-            type: 'number',
-            description: 'Max number of results'
-          }
-        }
-      }
-    },
-    {
-      name: 'list_thoughts',
-      description: 'Get recent thoughts/notes from Clay-Mate',
-      input_schema: {
-        type: 'object',
-        properties: {
-          limit: {
-            type: 'number',
-            description: 'Max number of results'
-          }
-        }
-      }
-    },
-    {
-      name: 'list_people',
-      description: 'Get contacts/people from Clay-Mate',
-      input_schema: {
-        type: 'object',
-        properties: {
-          limit: {
-            type: 'number',
-            description: 'Max number of results'
-          }
-        }
       }
     }
   ];
