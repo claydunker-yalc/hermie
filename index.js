@@ -41,7 +41,7 @@ async function executeToolCall(toolName, toolInput) {
     case 'add_action_item':
       return clayMate.addActionItem(toolInput);
     case 'complete_action_item':
-      return clayMate.completeActionItem(toolInput.action_item_id);
+      return clayMate.completeActionItem(toolInput.id);
     case 'update_action_item':
       return clayMate.updateActionItem(toolInput.action_item_id, toolInput);
     // Thought tools

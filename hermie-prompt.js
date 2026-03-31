@@ -138,16 +138,16 @@ function getToolDefinitions() {
     },
     {
       name: 'complete_action_item',
-      description: 'Mark an action item as completed. Requires the action_item_id (can use partial ID like first 8 characters).',
+      description: 'Mark an action item as completed. Requires the id (can use partial ID like first 8 characters).',
       input_schema: {
         type: 'object',
         properties: {
-          action_item_id: {
+          id: {
             type: 'string',
             description: 'The action item ID (full UUID or partial like first 8 chars)'
           }
         },
-        required: ['action_item_id']
+        required: ['id']
       }
     },
     {
