@@ -73,14 +73,13 @@ async function mcpCall(toolName, args = {}) {
   }
 }
 
-// ============ AVAILABLE TOOLS ============
+// ============ THOUGHT TOOLS ============
 
 async function searchThoughts(query, limit = 10, threshold = 0.5) {
   return mcpCall('search_thoughts', { query, limit, threshold });
 }
 
 async function listThoughts(options = {}) {
-  // options: { limit, type, topic, person, days }
   return mcpCall('list_thoughts', options);
 }
 
@@ -88,29 +87,47 @@ async function thoughtStats() {
   return mcpCall('thought_stats', {});
 }
 
-async function verifyConnection() {
-  return mcpCall('verify_connection', {});
-}
-
 async function captureThought(content) {
   return mcpCall('capture_thought', { content });
+}
+
+// ============ TASK TOOLS ============
+
+async function listTasks(options = {}) {
+  // options: { status, domain, limit, include_overdue }
+  return mcpCall('list_tasks', options);
+}
+
+async function addTask(params) {
+  // params: { title, description, domain, due_date, priority }
+  return mcpCall('add_task', params);
+}
+
+async function completeTask(taskId) {
+  return mcpCall('complete_task', { task_id: taskId });
+}
+
+async function searchTasks(query, status = 'all') {
+  return mcpCall('search_tasks', { query, status });
 }
 
 // ============ BOOT CONTEXT ============
 
 /**
  * Load session boot context from Clay-Mate
- * Gets recent thoughts and stats to give Hermie context
+ * Gets open tasks, recent thoughts, and stats
  */
 async function loadBootContext() {
   const results = await Promise.all([
-    listThoughts({ limit: 15, days: 7 }),
+    listTasks({ status: 'open', limit: 20, include_overdue: true }),
+    listThoughts({ limit: 10, days: 7 }),
     thoughtStats()
   ]);
 
-  const [recentThoughts, stats] = results;
+  const [openTasks, recentThoughts, stats] = results;
 
   return {
+    openTasks: openTasks.data,
     recentThoughts: recentThoughts.data,
     stats: stats.data,
     errors: results.filter(r => r.error).map(r => r.error)
@@ -118,11 +135,17 @@ async function loadBootContext() {
 }
 
 module.exports = {
+  // Thoughts
   searchThoughts,
   listThoughts,
   thoughtStats,
-  verifyConnection,
   captureThought,
+  // Tasks
+  listTasks,
+  addTask,
+  completeTask,
+  searchTasks,
+  // Boot
   loadBootContext,
   mcpCall
 };

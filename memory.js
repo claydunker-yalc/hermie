@@ -46,6 +46,10 @@ function needsBootContext(session) {
 function formatClayMateContext(bootData) {
   const sections = [];
 
+  if (bootData.openTasks) {
+    sections.push(`## Open Tasks\n${bootData.openTasks}`);
+  }
+
   if (bootData.recentThoughts) {
     sections.push(`## Recent Thoughts (Last 7 Days)\n${bootData.recentThoughts}`);
   }
