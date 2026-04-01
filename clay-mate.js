@@ -58,8 +58,8 @@ async function mcpCall(toolName, args = {}) {
             // Check if result has isError flag
             if (parsed.result.isError) {
               const errorText = parsed.result.content
-                ?.filter((c: any) => c.type === 'text')
-                .map((c: any) => c.text)
+                ?.filter(c => c.type === 'text')
+                .map(c => c.text)
                 .join('\n') || 'Unknown error';
               console.error(`[MCP TOOL ERROR] ${toolName}:`, errorText);
               return { error: errorText, data: null };
@@ -68,8 +68,8 @@ async function mcpCall(toolName, args = {}) {
             // Extract text content from MCP response
             if (parsed.result.content && Array.isArray(parsed.result.content)) {
               const textContent = parsed.result.content
-                .filter((c: any) => c.type === 'text')
-                .map((c: any) => c.text)
+                .filter(c => c.type === 'text')
+                .map(c => c.text)
                 .join('\n');
               return { error: null, data: textContent };
             }
