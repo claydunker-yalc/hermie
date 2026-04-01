@@ -104,7 +104,7 @@ async function addActionItem(params) {
 }
 
 async function completeActionItem(actionItemId) {
-  return mcpCall('complete_action_item', { action_item_id: actionItemId });
+  return mcpCall('complete_action_item', { id: actionItemId });
 }
 
 async function updateActionItem(actionItemId, updates) {
