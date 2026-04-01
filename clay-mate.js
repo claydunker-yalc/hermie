@@ -14,31 +14,37 @@ async function mcpCall(toolName, args = {}) {
     // Build URL with key parameter
     const url = `${MCP_URL}?key=${MCP_KEY}`;
 
+    const requestBody = {
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: toolName,
+        arguments: args
+      },
+      id: Date.now()
+    };
+
+    console.log(`[MCP REQUEST] ${toolName}:`, JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json, text/event-stream'
       },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'tools/call',
-        params: {
-          name: toolName,
-          arguments: args
-        },
-        id: Date.now()
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Clay-Mate MCP error (${toolName}):`, response.status, errorText);
+      console.error(`[MCP HTTP ERROR] ${toolName}: status=${response.status}`, errorText);
       return { error: `MCP call failed: ${response.status}`, data: null };
     }
 
     // Parse SSE response
     const text = await response.text();
+    console.log(`[MCP RAW RESPONSE] ${toolName}:`, text);
+
     const lines = text.split('\n');
 
     for (const line of lines) {
@@ -46,18 +52,31 @@ async function mcpCall(toolName, args = {}) {
         const jsonStr = line.slice(6);
         try {
           const parsed = JSON.parse(jsonStr);
+          console.log(`[MCP PARSED] ${toolName}:`, JSON.stringify(parsed, null, 2));
+
           if (parsed.result) {
+            // Check if result has isError flag
+            if (parsed.result.isError) {
+              const errorText = parsed.result.content
+                ?.filter((c: any) => c.type === 'text')
+                .map((c: any) => c.text)
+                .join('\n') || 'Unknown error';
+              console.error(`[MCP TOOL ERROR] ${toolName}:`, errorText);
+              return { error: errorText, data: null };
+            }
+
             // Extract text content from MCP response
             if (parsed.result.content && Array.isArray(parsed.result.content)) {
               const textContent = parsed.result.content
-                .filter(c => c.type === 'text')
-                .map(c => c.text)
+                .filter((c: any) => c.type === 'text')
+                .map((c: any) => c.text)
                 .join('\n');
               return { error: null, data: textContent };
             }
             return { error: null, data: parsed.result };
           }
           if (parsed.error) {
+            console.error(`[MCP JSON-RPC ERROR] ${toolName}:`, parsed.error);
             return { error: parsed.error.message, data: null };
           }
         } catch (e) {
@@ -66,9 +85,10 @@ async function mcpCall(toolName, args = {}) {
       }
     }
 
+    console.error(`[MCP NO VALID RESPONSE] ${toolName}: Could not parse response`);
     return { error: 'No valid response from MCP', data: null };
   } catch (err) {
-    console.error(`Clay-Mate MCP exception (${toolName}):`, err.message);
+    console.error(`[MCP EXCEPTION] ${toolName}:`, err.message);
     return { error: err.message, data: null };
   }
 }

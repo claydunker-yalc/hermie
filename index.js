@@ -98,7 +98,9 @@ async function processWithClaude(userId, userMessage) {
       const toolResults = [];
 
       for (const toolUse of toolUseBlocks) {
+        console.log(`[TOOL CALL] ${toolUse.name} with input:`, JSON.stringify(toolUse.input, null, 2));
         const result = await executeToolCall(toolUse.name, toolUse.input);
+        console.log(`[TOOL RESULT] ${toolUse.name}:`, JSON.stringify(result, null, 2));
 
         // Track if we used a write operation
         if (WRITE_OPERATIONS.includes(toolUse.name)) {
